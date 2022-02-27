@@ -2,8 +2,7 @@ use bevy::prelude::*;
 
 const BASE_WIDTH: f32 = 640_f32;
 const BASE_HEIGHT: f32 = 360_f32;
-
-// const CHAR_RUN_FORWARD_SHEET: &str = include_str!("../assets/run_sheet.png");
+const BACKGROUND_COLOR: Color = Color::rgb(0., 0., 0.);
 
 fn main() {
     App::new()
@@ -14,6 +13,7 @@ fn main() {
             height: BASE_HEIGHT,
             ..Default::default()
         })
+        .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
         .add_system(animate_sprite_system)
@@ -52,5 +52,5 @@ fn setup(
             // transform: Transform::from_scale(Vec3::splat(0.6)),
             ..Default::default()
         })
-        .insert(Timer::from_seconds(0.1, true));
+        .insert(Timer::from_seconds(0.2, true));
 }
