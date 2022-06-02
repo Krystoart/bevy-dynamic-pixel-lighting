@@ -2,6 +2,8 @@
 
 use bevy::prelude::*;
 
+use components::{PlayerTimer, Velocity};
+mod components;
 
 const BASE_SCREEN_SIZE: (f32, f32) = (640., 360.);
 const BACKGROUND_COLOR: Color = Color::rgb(0., 0., 0.);
