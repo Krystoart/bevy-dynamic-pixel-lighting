@@ -1,25 +1,62 @@
+#![allow(unused)] // temp
+
 use bevy::prelude::*;
 
-const BASE_WIDTH: f32 = 640_f32;
-const BASE_HEIGHT: f32 = 360_f32;
+
+const BASE_SCREEN_SIZE: (f32, f32) = (640., 360.);
 const BACKGROUND_COLOR: Color = Color::rgb(0., 0., 0.);
+const TIME_STEP: f32 = 1. / 60.;
+const SPEED: f32 = 500.;
+
+const PLAYER_SHEET: &str = "run_sheet.png";
+const PLAYER_RUN_LEN: usize = 4;
+const SPRITE_SCALE: f32 = 1.2;
+
+struct GameTextures {
+    player: Handle<TextureAtlas>,
+}
 
 fn main() {
     App::new()
         .insert_resource(WindowDescriptor {
             title: String::from("Pixel art dynamic lighting"),
-            vsync: true,
-            width: BASE_WIDTH,
-            height: BASE_HEIGHT,
+            // vsync: true,
+            width: BASE_SCREEN_SIZE.0,
+            height: BASE_SCREEN_SIZE.1,
             ..Default::default()
         })
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_plugins(DefaultPlugins)
-        .add_startup_system(setup)
+        .add_startup_system(setup_system)
         .add_system(animate_sprite_system)
         .run();
 
     // canvas size: 640x360
+}
+
+fn setup_system(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+) {
+    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+
+    // Player animation atlas
+    let texture_handle = asset_server.load(PLAYER_SHEET);
+    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 128.0), 4, 1);
+    let player = texture_atlases.add(texture_atlas);
+
+    // Adding game textures as a resource
+    let game_textures = GameTextures { player };
+    commands.insert_resource(game_textures);
+}
+
+fn movable_system(mut query: Query<(&Velocity, &mut Transform)>) {
+    if let Ok((velocity, mut tf)) = query.get_single_mut() {
+        let translation = &mut tf.translation;
+        translation.x += velocity.x * TIME_STEP * SPEED;
+        translation.y += velocity.y * TIME_STEP * SPEED;
+    }
 }
 
 fn animate_sprite_system(
@@ -27,30 +64,6 @@ fn animate_sprite_system(
     texture_atlases: Res<Assets<TextureAtlas>>,
     mut query: Query<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>)>,
 ) {
-    for (mut timer, mut sprite, texture_atlas_handle) in query.iter_mut() {
-        timer.tick(time.delta());
-        if timer.finished() {
-            let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
-            sprite.index = (sprite.index + 1) % texture_atlas.textures.len();
-        }
     }
-}
 
-fn setup(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut textures: ResMut<Assets<TextureAtlas>>,
-) {
-    let texture_handle = asset_server.load("../assets/run_sheet.png");
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 128.0), 4, 1);
-    let textures_handle = textures.add(texture_atlas);
 
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    commands
-        .spawn_bundle(SpriteSheetBundle {
-            texture_atlas: textures_handle,
-            // transform: Transform::from_scale(Vec3::splat(0.6)),
-            ..Default::default()
-        })
-        .insert(Timer::from_seconds(0.2, true));
-}
