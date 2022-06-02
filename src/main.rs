@@ -3,7 +3,11 @@
 use bevy::prelude::*;
 
 use components::{PlayerTimer, Velocity};
+
+use player::PlayerPlugin;
+
 mod components;
+mod player;
 
 const BASE_SCREEN_SIZE: (f32, f32) = (640., 360.);
 const BACKGROUND_COLOR: Color = Color::rgb(0., 0., 0.);
@@ -29,8 +33,10 @@ fn main() {
         })
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_plugins(DefaultPlugins)
+        .add_plugin(PlayerPlugin)
         .add_startup_system(setup_system)
         .add_system(animate_sprite_system)
+        .add_system(movable_system)
         .run();
 
     // canvas size: 640x360
@@ -63,9 +69,15 @@ fn movable_system(mut query: Query<(&Velocity, &mut Transform)>) {
 
 fn animate_sprite_system(
     time: Res<Time>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>)>,
+    mut query: Query<(&mut PlayerTimer, &mut TextureAtlasSprite)>,
 ) {
+    for (mut timer, mut sprite) in query.iter_mut() {
+        timer.0.tick(time.delta());
+        if timer.0.finished() {
+            sprite.index += 1;
+            if sprite.index >= PLAYER_RUN_LEN {
+                sprite.index = 0;
+            }
+        }
     }
-
-
+}
